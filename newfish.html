@@ -1,0 +1,227 @@
+<!doctype html>
+<html>
+    <head>
+        <title>New Fish</title>
+        <script src='/jquery.js'></script>
+        <script src='/knockout.js'></script>
+    </head>
+    <body>
+        <h2>Use the Source, Luke</h2>
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <script>
+            
+            //(function () {
+            "use strict";
+            /*
+            new fish
+            darin.trueblood@gmail.com
+            20120425
+
+            notes:
+            keep track of the actual fish in the pond
+
+            debating canvas vs html
+
+            need a pond, which has a shape. we need to be able to tell if a
+            point is in or out of the pond.
+
+            we need fish. schools of fish. finite, countable fish in a pond.
+            fish move around. perhaps they will be cellular atomata and do
+            schooling behavior. that might be fun. we could do all kinds of
+            tricky things, like bass like deep, shaded water, perch like
+            to be near the surface in reedy places, etc. that ai behavior would
+            be a fun project all in itself.
+
+            so maybe a fish object, with keys of fish type (bass, trout, ...),
+            value of an array of that type of fish.
+
+            also, some spiffy data structure to store the location of 
+            everything, which will facilitate sensibly asking "what is near 
+            this?" store coordinants and object referance in the structure.
+
+            so when a baited hook is at (x,y), we ask the data struc what fish
+            are within d distance of (x,y), and check each one of them against
+            the bait type to see if there is a strike.
+            */
+
+            var Fishes = function () { }, 
+            Fish = function (config) {
+                config = config || {};
+                this.species = config.species || "dogfish";
+                this.weight = config.weight || Math.random() * 
+                ((config.maxWeight || 5) - 
+                (config.minWeight || 0)) + 
+                (config.minWeight || 0);
+                this.vector = config.vector || {x : 0, y : 0, angle : 0, speed : 0};
+            },
+            theseFish = new Fishes(),
+            thisPond = new Pond,
+            bassConfig = {species:'bass',vector:{x:4,y:3,angle:0,speed:0},
+                minWeight:1,maxWeight:10,sense:5},
+            perchConfig = {species:'perch',vector:{x:4,y:3,angle:0,speed:0},
+                minWeight:.3,maxWeight:3,sense:3},
+            behaviors = {};
+            behaviors['bass'] = new Behavior(bassConfig);
+            behaviors['perch'] = new Behavior(perchConfig);
+
+            var ctx = $('#canvas')[0].getContext('2d');
+
+            //need to fishes to be like defaultdict. we just want to be able
+            //to add fishes, whether the species exists or not. we don't want
+            //some dorky incantation for the first addition, and another to 
+            //just add.
+            Fishes.prototype.addFish = function (config) {
+                //TODO: test for arrayness and deal accordingly
+                var aFish = new Fish(config);
+                if (this.hasOwnProperty(aFish.species)) {
+                    this[aFish.species][this[aFish.species].length] = aFish;
+                }
+                else {
+                    this[aFish.species] = [aFish];
+                }
+
+                return this;
+            };
+
+            Fish.prototype.swim = function() {
+                console.log(this.species);
+                return this;
+            };
+
+            //need a pond object, that is some sort of structure that stores
+            //the olcation of things, and allows for fast retrieval of things
+            //that are near by. not quite sure how all this will work...
+            function Pond () {
+                this.pondSpace = [];
+                this.points = [];
+                this.updatePoints = function (fishes) {
+                    this.points = [];
+                    for (var species in fishes) {
+                        if (theseFish.hasOwnProperty(species)) {
+                            this.points = this.points.concat(fishes[species]);
+                        }
+                    };        
+                };
+                this.getObjectsWithinRadius = function (vec,radius) {
+                    var obs = [];
+                    for (var i = 0, len = this.points.length; i < len; i++) {
+                        if (getDistance(vec,this.points[i].vector) < radius) {
+                            obs[obs.length] = this.points[i];
+                        }
+                    }
+                    return obs;
+                }
+            };
+
+            function getDistance (vec1, vec2) {
+                //TODO: error checking here
+                var sqrt = Math.sqrt,
+                    pow = Math.pow;
+                    return sqrt(pow(vec1.x - vec2.x, 2) +
+                        pow(vec1.y - vec2.y, 2) + 
+                        pow((vec1.z || 0) - (vec2.z ||0), 2));
+            }
+            //thinking now about how to implement fish behaviors. little test
+            //of applying to an array of fish
+            /*
+            what is it that makes a fish behave?
+            perhaps a fish has some certain radius of perception, and it is
+            influenced by things it percieves. other fish of its species, bait,
+            environmental stuff like depth, foliage, etc.
+
+            do all fish of a species behave the same way, or do we stick this
+            sort of thing into each fish, so they could even learn (like the 
+            bigger it gets, the less likely it is to bite on bait)?
+
+            probably take the easy way to begin, and make a behavior function
+            per species. probably a closure factory that takes the particulars
+            for a species and returns a function that pertains to it.
+            */
+            function Behavior (speciesConfig) {
+                var thisBehavior = speciesConfig;
+                return function (fish,pond) {
+                    var thisBehavior = speciesConfig;
+                    //find influences
+                    var influences = pond.getObjectsWithinRadius(fish.vector,thisBehavior.sense);
+                    console.log(influences);
+                    console.log(thisBehavior.species);
+                    return this;
+                }
+            }
+
+            function behave (fishes, pond) {
+                //iterate over the fish, adding them to the new fishes
+                var thoseFish = new Fishes(),
+                    aSpecies,
+                    aFish,
+                    i,len;
+                for (aSpecies in fishes) {
+                    if (fishes.hasOwnProperty(aSpecies)) {
+                        for (i=0,len=fishes[aSpecies].length;i<len;i++) {
+                            aFish = fishes[aSpecies][i];
+                            console.log(aFish);
+                            thoseFish.addFish(aFish);
+                        }
+                    }
+                }
+                return thoseFish;
+            }
+
+            //Crockford magic
+            if (typeof Object.create !== 'function') {
+                Object.create = function (o) {
+                    function F() {}
+                    F.prototype = o;
+                    return new F();
+                };
+            }
+
+            /*****************************************************************/
+            theseFish
+                .addFish(bassConfig)
+                .addFish(bassConfig)
+                .addFish(bassConfig)
+                .addFish({species:'bass',vector:{x:4,y:3,angle:0,speed:0},minWeight:10,maxWeight:20})
+                .addFish(perchConfig)
+                .addFish();
+
+            thisPond.updatePoints(theseFish);
+
+            //here is the first pass at making the pond itself.
+            //3d space, (x,y,z), with (0,0,0) being the surface in the 
+            //south east corner.
+            /*
+            thisPond.pondSpace = (function(){
+                var i,j,k,pond = [];
+                //how about we make it a 500 x 500 x 50 deep, shaped lik a dish
+
+            }
+            */
+            $.get('/api/time',function(data){
+                console.log(data);
+            });
+            
+            //canvas fun.
+            for (var p=0; p < 800; p++) {
+                for (var q=0; q < 600; q++) {
+                    ctx.fillStyle = '#00' + Math.floor(p/4).toString() + Math.floor(1/4).toString();
+                    ctx.beginPath();
+                    ctx.rect(p,q,1,1);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            
+            /*
+            at some point, we actually have to write the main loop, or whatever
+            passes for it (server side push of updates?)
+
+            march through the pond, make a structure of new vectors, then
+            update theseFish? tricky bits about fish that get caught, and
+            things that aren't fish.
+            */
+            //}());
+        </script>
+    </body>
+</html>

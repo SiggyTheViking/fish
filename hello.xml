@@ -1,0 +1,8 @@
+<uwsgi>
+    <plugin>python3</plugin> 
+    <socket>127.0.0.1:3031</socket>
+    <pythonpath>/home/darin/code/newfish/</pythonpath>
+    <app mountpoint="/">
+        <script>hello</script>
+    </app>
+</uwsgi>
