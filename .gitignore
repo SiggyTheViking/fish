@@ -1,0 +1,4 @@
+#blarg
+
+*.pyc
+__pycache__/
