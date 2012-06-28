@@ -1,4 +1,0 @@
-uwsgi:
-  module: python3
-  wsgi-file: /home/darin/code/newfish/hello.py  # or simple ./app.py
-  http: 127.0.0.1:3031

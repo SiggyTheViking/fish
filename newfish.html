@@ -4,10 +4,26 @@
         <title>New Fish</title>
         <script src='/jquery.js'></script>
         <script src='/knockout.js'></script>
+        <style type="text/css">
+            .hidden {
+                display: none;
+            }
+        </style>
     </head>
     <body>
-        <h2>Use the Source, Luke</h2>
-        <canvas id="canvas" width="800" height="600"></canvas>
+        <div style="position: relative;">
+            <h2>Use the Source, Luke</h2>
+            <div style="right:0px; float: left;">
+                <canvas id="canvas" width="640" height="480" style="border: solid 1px blue; "></canvas>
+            </div>
+            <div style="border: solid 1px blue; width: 200px; height: 480px; float: left;">
+                UI controls go here.
+                <input type="button" value="Get Pond" id="getPondBtn" />
+                <input type="button" value="Make Fishes Swim" id="arrowBtn" />
+                <input type="text" data-bind="value: width" />
+                <input type="text" data-bind="value: height" />
+            </div>
+        </div>
         <script>
             
             //(function () {
@@ -60,11 +76,79 @@
                 minWeight:1,maxWeight:10,sense:5},
             perchConfig = {species:'perch',vector:{x:4,y:3,angle:0,speed:0},
                 minWeight:.3,maxWeight:3,sense:3},
-            behaviors = {};
+            depth=50,
+            behaviors = {},
+            savedPnd;
             behaviors['bass'] = new Behavior(bassConfig);
             behaviors['perch'] = new Behavior(perchConfig);
 
-            var ctx = $('#canvas')[0].getContext('2d');
+            var vm = {
+                width: ko.observable(640),
+                height: ko.observable(480)
+            };
+
+            ko.applyBindings(vm);
+
+            var arrow = new Image();
+            arrow.src = 'images/Arrow8px.png'; 
+            //arrow.width = 8;
+            //arrow.height = 3;
+
+            var colorLU = {
+                0: '808000',
+                1: '00005',
+                2: '00000a',
+                3: '00000f',
+                4: '000014',
+                5: '000019',
+                6: '00001e',
+                7: '000023',
+                8: '000028',
+                9: '00002d',
+                10: '000032',
+                11: '000037',
+                12: '00003c',
+                13: '000041',
+                14: '000046',
+                15: '00004b',
+                16: '000050',
+                17: '000055',
+                18: '00005a',
+                19: '00005f',
+                20: '000064',
+                21: '000069',
+                22: '00006e',
+                23: '000073',
+                24: '000078',
+                25: '00007d',
+                26: '000082',
+                27: '000087',
+                28: '00008c',
+                29: '000091',
+                30: '000096',
+                31: '00009b',
+                32: '0000a0',
+                33: '0000a5',
+                34: '0000aa',
+                35: '0000af',
+                36: '0000b4',
+                37: '0000b9',
+                38: '0000be',
+                39: '0000c3',
+                40: '0000c8',
+                41: '0000cd',
+                42: '0000d2',
+                43: '0000d7',
+                44: '0000dc',
+                45: '0000e1',
+                46: '0000e6',
+                47: '0000eb',
+                48: '0000f0',
+                49: '0000f5',
+                50: '0000fa'}
+
+            var cvs = $('#canvas');
+            var ctx = cvs[0].getContext('2d');
 
             //need to fishes to be like defaultdict. we just want to be able
             //to add fishes, whether the species exists or not. we don't want
@@ -142,6 +226,8 @@
                 return function (fish,pond) {
                     var thisBehavior = speciesConfig;
                     //find influences
+                    var influences = pond.getObjectsWithinRadius(
+                        fish.vector,thisBehavior.sense);
                     var influences = pond.getObjectsWithinRadius(fish.vector,thisBehavior.sense);
                     console.log(influences);
                     console.log(thisBehavior.species);
@@ -167,52 +253,82 @@
                 return thoseFish;
             }
 
-            //Crockford magic
-            if (typeof Object.create !== 'function') {
-                Object.create = function (o) {
-                    function F() {}
-                    F.prototype = o;
-                    return new F();
-                };
-            }
 
             /*****************************************************************/
             theseFish
-                .addFish(bassConfig)
-                .addFish(bassConfig)
-                .addFish(bassConfig)
-                .addFish({species:'bass',vector:{x:4,y:3,angle:0,speed:0},minWeight:10,maxWeight:20})
+                .addFish({species:'bass',vector:{x:140,y:153,angle:.41,speed:0},minWeight:10,maxWeight:20})
+                .addFish({species:'bass',vector:{x:150,y:153,angle:.47,speed:0},minWeight:10,maxWeight:20})
+                .addFish({species:'bass',vector:{x:160,y:153,angle:.53,speed:0},minWeight:10,maxWeight:20})
+                .addFish({species:'bass',vector:{x:145,y:153,angle:.5,speed:0},minWeight:10,maxWeight:20})
+                .addFish({species:'bass',vector:{x:144,y:144,angle:.42,speed:0},minWeight:10,maxWeight:20})
                 .addFish(perchConfig)
                 .addFish();
 
             thisPond.updatePoints(theseFish);
 
-            //here is the first pass at making the pond itself.
-            //3d space, (x,y,z), with (0,0,0) being the surface in the 
-            //south east corner.
-            /*
-            thisPond.pondSpace = (function(){
-                var i,j,k,pond = [];
-                //how about we make it a 500 x 500 x 50 deep, shaped lik a dish
-
+            function getPond(){
+                $.get('/api/pond',{'width':vm.width(),'height':vm.height(),'depth':depth},function(data){
+                    var pnd = thisPond.pondSpace = data.pond;
+                    cvs.attr({'width':vm.width(),'height':vm.height()});
+                    drawPond(pnd);
+                });
             }
-            */
-            $.get('/api/time',function(data){
-                console.log(data);
-            });
-            
-            //canvas fun.
-            for (var p=0; p < 800; p++) {
-                for (var q=0; q < 600; q++) {
-                    ctx.fillStyle = '#00' + Math.floor(p/4).toString() + Math.floor(1/4).toString();
-                    ctx.beginPath();
-                    ctx.rect(p,q,1,1);
-                    ctx.closePath();
-                    ctx.fill();
+
+            $('#getPondBtn').on('click',getPond);
+
+            function drawPond (pondArr) {
+                ctx.clearRect(0,0,vm.width(),vm.height());
+                if (savedPnd) {
+                    ctx.putImageData(savedPnd,0,0);
+                }
+                else {
+                    for (var p=0; p < vm.width(); p++) {
+                        for (var q=0; q < vm.height(); q++) {
+                            ctx.fillStyle = colorLU[pondArr[p][q]]
+                            ctx.beginPath();
+                            ctx.rect(p,q,1,1);
+                            ctx.closePath();
+                            ctx.fill();
+                        }
+                    }
+                    savedPnd = ctx.getImageData(0,0,vm.width(),vm.height());
                 }
             }
 
-            
+            /*$('#arrowBtn').on('click',function(){
+                ctx.save();
+                ctx.rotate(.42);
+                ctx.drawImage(arrow,150,150);
+                ctx.restore();
+            });*/
+
+            $('#arrowBtn').on('click',drawFish);
+
+            function drawFish(){
+                var i,theta,len;
+                drawPond(thisPond.pondSpace);
+                len = theseFish.bass.length;
+                for (i=0; i< len; i++){
+                    ctx.save();
+                    ctx.rotate(+theseFish.bass[i].vector.angle);
+                    ctx.drawImage(arrow,+theseFish.bass[i].vector.x, +theseFish.bass[i].vector.y);
+                    ctx.restore();
+                }
+                moveBass();
+                
+            }
+
+            function moveBass(){
+                var i,len;
+                len = theseFish.bass.length;
+                for (i=0; i< len; i++){
+                    theseFish.bass[i].vector.x += 10;
+                    theseFish.bass[i].vector.y += 10;
+                }
+            }
+
+
+
             /*
             at some point, we actually have to write the main loop, or whatever
             passes for it (server side push of updates?)

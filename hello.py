@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #!/usr/bin/python
 
 from bottle import route, request, run, default_app
@@ -8,17 +7,9 @@ import os
 import pond as p
 
 #conn = pg.connect('dbname=pvr user=darin password=fjrk99cl')
-=======
 #!/usr/bin/python3
 
-from bottle import route, run, default_app
-import sys
-import os
-import psycopg2 as pg
-
-conn = pg.connect('dbname=pvr user=darin password=fjrk99cl')
->>>>>>> 0b6d2b446751da70a3cb70616295f0e8b8910c78
-
+#touch
 @route('/api/hello')
 def hello():
     return sys.version#"Hello World!"
@@ -32,7 +23,6 @@ def time():
     return dict
  
 @route('/api/pond')
-<<<<<<< HEAD
 def gen_pond():
     w = int(request.query.width)
     h = int(request.query.height)
@@ -41,10 +31,8 @@ def gen_pond():
     pnd = p.make_a_pond(w,h,set_depth_func)
     return {'pond':pnd,'width':w,'height':h,'depth':d}
 
-=======
 def pond():
     return {'foo':'bar'}
->>>>>>> 0b6d2b446751da70a3cb70616295f0e8b8910c78
 
 if __name__ == "__main__":
     # Interactive mode

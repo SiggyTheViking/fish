@@ -1,8 +1,7 @@
 <uwsgi>
-    <plugin>python3</plugin> 
+    <plugin>python</plugin> 
     <socket>127.0.0.1:3031</socket>
-    <pythonpath>/home/darin/code/newfish/</pythonpath>
-    <app mountpoint="/">
-        <script>hello</script>
-    </app>
+    <pythonpath>/home/darin/code/fish/</pythonpath>
+    <module>hello</module>
+    <touch-reload>/home/darin/code/fish/hello.py</touch-reload>
 </uwsgi>
